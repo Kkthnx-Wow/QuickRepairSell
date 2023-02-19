@@ -157,7 +157,6 @@ local function CreateAutoRepair()
 end
 
 function frame:OnEvent(event, ...)
-	print(event)
 	if event == "PLAYER_LOGIN" then
 		CreateAutoRepair()
 	elseif event == "MERCHANT_SHOW" then
@@ -165,7 +164,7 @@ function frame:OnEvent(event, ...)
 	elseif event == "MERCHANT_CLOSED" then
 		merchantClose()
 	elseif event == "UI_ERROR_MESSAGE" then
-		checkBankFund(...)
+		checkBankFund(event, ...)
 	end
 end
 
