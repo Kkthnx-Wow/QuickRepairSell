@@ -1,5 +1,7 @@
 # QuickRepairSell
 
+Allows players to automatically repair their gear using guild funds or their own gold, and also automatically sells any items in their inventory that can be sold to a vendor. 
+
 ## Join the community
 There are thousands of users, but most are content to simply download and use the interface without further ado. If you wish to get more involved though, have some questions you can't find answers to anywhere else or simply just wish to stop by and say hello, we have a [discord](https://discordapp.com/) server as well. 
 
