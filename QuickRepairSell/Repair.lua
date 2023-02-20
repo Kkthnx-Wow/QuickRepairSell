@@ -51,7 +51,7 @@ local moneyFormat = {
 
 local function formatMoneyString(money, shortFormat)
 	if money >= 1e6 and not shortFormat then
-		local formattedMoney = BreakUpLargeNumbers(stringFormat("%d", money / 1e4))
+		local formattedMoney = stringFormat("%d,%03d", math.floor(money / 1e4), money % 1e4)
 		return stringFormat("%s%s", formattedMoney, moneyFormat.gold)
 	else
 		if money > 0 then
