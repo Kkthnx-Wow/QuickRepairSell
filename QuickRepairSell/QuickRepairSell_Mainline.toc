@@ -10,6 +10,5 @@
 ## X-Wago-ID:
 
 # Core
-Options.lua
 Repair.lua
 Sell.lua
