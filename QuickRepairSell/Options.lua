@@ -42,6 +42,13 @@ function QuickRepairSellFrame:InitializeOptions()
 	autoSellCheckbox:SetPoint("TOPLEFT", 16, -16)
 	autoSellCheckbox.Text:SetText("Enable Auto Sell")
 
+	autoSellCheckbox.tooltipText = "Automatically sell gray items when visiting a merchant."
+	autoSellCheckbox:SetScript("OnEnter", function(self)
+		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+		GameTooltip:SetText(self.tooltipText, nil, nil, nil, nil, true)
+	end)
+	autoSellCheckbox:SetScript("OnLeave", GameTooltip_Hide)
+
 	-- Set up the auto sell checkbox to update the database when clicked and initialize its checked status
 	autoSellCheckbox:SetScript("OnClick", function()
 		self.dataBase.autoSellEnabled = autoSellCheckbox:GetChecked()
@@ -53,7 +60,13 @@ function QuickRepairSellFrame:InitializeOptions()
 	autoRepairCheckbox:SetPoint("TOPLEFT", autoSellCheckbox, "BOTTOMLEFT", 0, -16)
 	autoRepairCheckbox.Text:SetText("Enable Auto Repair")
 
-	-- Set up the auto repair checkbox to update the database when clicked and initialize its checked status
+	autoRepairCheckbox.tooltipText = "Automatically repair all items when talking to a vendor"
+	autoRepairCheckbox:SetScript("OnEnter", function(self)
+		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+		GameTooltip:SetText(self.tooltipText, nil, nil, nil, nil, true)
+	end)
+	autoRepairCheckbox:SetScript("OnLeave", GameTooltip_Hide)
+
 	autoRepairCheckbox:SetScript("OnClick", function()
 		self.dataBase.autoRepairEnabled = autoRepairCheckbox:GetChecked()
 
@@ -64,6 +77,8 @@ function QuickRepairSellFrame:InitializeOptions()
 		else
 			QuickRepairSellGuildFundsCheckbox:SetEnabled(false)
 			QuickRepairSellGuildFundsCheckbox:SetAlpha(0.5)
+			QuickRepairSellGuildFundsCheckbox:SetChecked(false)
+			self.dataBase.useGuildFunds = false
 		end
 	end)
 	autoRepairCheckbox:SetChecked(self.dataBase.autoRepairEnabled)
@@ -72,8 +87,15 @@ function QuickRepairSellFrame:InitializeOptions()
 	local guildFundsCheckbox = CreateFrame("CheckButton", "QuickRepairSellGuildFundsCheckbox", optionsPanel, "InterfaceOptionsCheckButtonTemplate")
 	guildFundsCheckbox:SetPoint("TOPLEFT", autoRepairCheckbox, "BOTTOMLEFT", 16, -16)
 	guildFundsCheckbox.Text:SetText("Use Guild Funds for Repairs")
-	guildFundsCheckbox:SetEnabled(false)
-	guildFundsCheckbox:SetAlpha(0.5)
+	guildFundsCheckbox:SetEnabled(self.dataBase.autoRepairEnabled)
+	guildFundsCheckbox:SetAlpha(self.dataBase.autoRepairEnabled and 1 or 0.5)
+
+	guildFundsCheckbox.tooltipText = "If checked, will attempt to use guild funds to pay for repairs if there are enough funds in the guild bank."
+	guildFundsCheckbox:SetScript("OnEnter", function(self)
+		GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+		GameTooltip:SetText(self.tooltipText, nil, nil, nil, nil, true)
+	end)
+	guildFundsCheckbox:SetScript("OnLeave", GameTooltip_Hide)
 
 	-- Set up the guild funds checkbox to update the database when clicked and initialize its checked status
 	guildFundsCheckbox:SetScript("OnClick", function()
