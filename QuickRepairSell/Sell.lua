@@ -73,16 +73,7 @@ local function startSelling()
 			-- get information about the item in the current slot
 			local info = C_Container_GetContainerItemInfo(bag, slot)
 			if info then
-				if
-					not cache["b" .. bag .. "s" .. slot]
-					and info.hyperlink
-					and not info.hasNoValue
-					and (
-						info.quality == 0
-						and not petTrashCurrenies[info.itemID]
-						and (not C_TransmogCollection_GetItemInfo(info.hyperlink) or not IsUnknownTransmog(bag, slot))
-					)
-				then
+				if not cache["b" .. bag .. "s" .. slot] and info.hyperlink and not info.hasNoValue and (info.quality == 0 and not petTrashCurrenies[info.itemID] and (not C_TransmogCollection_GetItemInfo(info.hyperlink) or not IsUnknownTransmog(bag, slot))) then
 					cache["b" .. bag .. "s" .. slot] = true
 					C_Container_UseContainerItem(bag, slot)
 					C_Timer_After(0.15, startSelling)
@@ -94,6 +85,10 @@ local function startSelling()
 end
 
 local function updateSelling(event, ...)
+	if not QuickRepairSellDB.autoSellEnabled then
+		return
+	end
+
 	local _, arg = ...
 	if event == "MERCHANT_SHOW" then
 		-- exit if shift key is pressed

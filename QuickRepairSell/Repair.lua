@@ -1,95 +1,50 @@
 local addonName, addon = ...
 
--- Fix FormatMoneyString
--- Add options panel
-
-local frame = CreateFrame("Frame")
+local frame = CreateFrame("Frame", addonName)
 frame:RegisterEvent("PLAYER_LOGIN")
 
-local string_format = string.format
-
-local C_Timer_After = C_Timer.After
-local CanGuildBankRepair = CanGuildBankRepair
-local CanMerchantRepair = CanMerchantRepair
-local GetGuildBankWithdrawMoney = GetGuildBankWithdrawMoney
-local GetMoney = GetMoney
-local GetRepairAllCost = GetRepairAllCost
-local IsInGuild = IsInGuild
-local IsShiftKeyDown = IsShiftKeyDown
-local LE_GAME_ERR_GUILD_NOT_ENOUGH_MONEY = LE_GAME_ERR_GUILD_NOT_ENOUGH_MONEY
-
--- Auto repair
--- local autoRepair -- function that handles the repair of all items
--- local canRepair -- boolean indicating if repair is possible
-local isBankEmpty -- boolean indicating if guild bank is empty
-local isShown -- boolean indicating if the function is currently shown
-local repairAllCost -- cost to repair all items
-
-local stringFormat = string.format
 local cTimerAfter = C_Timer.After
 local canGuildBankRepair = CanGuildBankRepair
 local canMerchantRepair = CanMerchantRepair
 local getGuildBankWithdrawMoney = GetGuildBankWithdrawMoney
 local getMoney = GetMoney
 local getRepairAllCost = GetRepairAllCost
-local isShiftKeyDown = IsShiftKeyDown
 local isInGuild = IsInGuild
+local isShiftKeyDown = IsShiftKeyDown
 local leGameErrGuildNotEnoughMoney = LE_GAME_ERR_GUILD_NOT_ENOUGH_MONEY
 local repairAllItems = _G.RepairAllItems
+local stringFormat = string.format
 
-local autoRepairOptions = {
-	none = false,
-	guild = true,
-	player = true,
-}
+-- Auto repair
+local autoRepair -- function that handles the repair of all items
+local canRepair -- boolean indicating if repair is possible
+local isBankEmpty -- boolean indicating if guild bank is empty
+local isShown -- boolean indicating if the function is currently shown
+local repairAllCost -- cost to repair all items
 
-local moneyFormat = {
-	gold = "|cffffd700%s|r",
-	silver = "|cffd0d0d0%s|r",
-	copper = "|cffc77050%s|r",
-}
+local GOLD_AMOUNT_SYMBOL = format("|cffffd700%s|r", GOLD_AMOUNT_SYMBOL)
+local SILVER_AMOUNT_SYMBOL = format("|cffd0d0d0%s|r", SILVER_AMOUNT_SYMBOL)
+local COPPER_AMOUNT_SYMBOL = format("|cffc77050%s|r", COPPER_AMOUNT_SYMBOL)
 
 local function formatMoneyString(money, shortFormat)
-	if money >= 1e6 and not shortFormat then
-		local formattedMoney = stringFormat("%d,%03d", math.floor(money / 1e4), money % 1e4)
-		return stringFormat("%s%s", formattedMoney, moneyFormat.gold)
-	else
-		if money > 0 then
-			local moneyString = ""
-			local gold = floor(money / 1e4)
-			local silver = floor(money / 100) % 100
-			local copper = money % 100
-
-			if gold > 0 then
-				moneyString = stringFormat(" %d%s", gold, moneyFormat.gold)
-			end
-
-			if silver > 0 then
-				moneyString = stringFormat("%s %d%s", moneyString, silver, moneyFormat.silver)
-			end
-
-			if copper > 0 then
-				moneyString = stringFormat("%s %d%s", moneyString, copper, moneyFormat.copper)
-			end
-
-			return moneyString
-		else
-			return stringFormat(" 0%s", moneyFormat.copper)
-		end
+	if not money or type(money) ~= "number" then
+		return ""
 	end
-end
 
-local function delayFunc()
-	if isBankEmpty then
-		repairAllItems(true)
-	else
-		print(
-			stringFormat(
-				"|cffffff00Your items have been repaired using guild bank funds for: %s|r",
-				formatMoneyString(repairAllCost)
-			)
-		)
+	local gold, silver, copper = math.floor(money / 10000), math.floor((money % 10000) / 100), money % 100
+	local moneyString = ""
+
+	if gold > 0 then
+		moneyString = format("%d%s ", gold, GOLD_AMOUNT_SYMBOL)
 	end
+
+	if silver > 0 or gold > 0 then
+		moneyString = format("%s%d%s ", moneyString, silver, SILVER_AMOUNT_SYMBOL)
+	end
+
+	moneyString = format("%s%d%s", moneyString, copper, COPPER_AMOUNT_SYMBOL)
+
+	return moneyString
 end
 
 local function autoRepair(override)
@@ -101,30 +56,27 @@ local function autoRepair(override)
 	isBankEmpty = false
 
 	local myMoney = getMoney()
-
 	local repairAllCost, canRepair = getRepairAllCost()
 
 	if canRepair and repairAllCost > 0 then
-		if
-			not override
-			and autoRepairOptions.guild
-			and isInGuild()
-			and canGuildBankRepair()
-			and getGuildBankWithdrawMoney() >= repairAllCost
-		then
+		if not override and QuickRepairSellDB.useGuildFunds and isInGuild() and canGuildBankRepair() and getGuildBankWithdrawMoney() >= repairAllCost then
 			repairAllItems(true)
 		else
 			if myMoney > repairAllCost then
 				repairAllItems()
-				print(
-					stringFormat("|cffffff00Your items have been repaired for:|r %s", formatMoneyString(repairAllCost))
-				)
+				print(stringFormat("|cffffff00Your items have been repaired for:|r %s", formatMoneyString(repairAllCost)))
 			else
-				print(stringFormat("You don't have enough money to repair,|r %s", UnitName("player")))
+				print(stringFormat("You don't have enough money to repair, %s", UnitName("player")))
 			end
 		end
 
-		cTimerAfter(0.5, delayFunc)
+		cTimerAfter(0.5, function()
+			if isBankEmpty then
+				autoRepair(true)
+			else
+				print(stringFormat("|cffffff00Your items have been repaired using guild bank funds for: %s|r", formatMoneyString(repairAllCost)))
+			end
+		end)
 	end
 end
 
@@ -141,7 +93,7 @@ local function merchantClose()
 end
 
 local function merchantShow()
-	if isShiftKeyDown() or autoRepairOptions.none or not canMerchantRepair() then
+	if isShiftKeyDown() or not QuickRepairSellDB.autoRepairEnabled or not canMerchantRepair() then
 		return
 	end
 
